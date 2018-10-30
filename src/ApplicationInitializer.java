@@ -1,5 +1,7 @@
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
 
 public class ApplicationInitializer {
 
@@ -22,6 +24,22 @@ public class ApplicationInitializer {
     private void setupGameController(){
         gameController = new GameController(Toolkit.getDefaultToolkit().getScreenSize());
         mainFrame.setContentPane(gameController);
+        mainFrame.addKeyListener(new KeyListener() {
+            @Override
+            public void keyTyped(KeyEvent e) {
+
+            }
+
+            @Override
+            public void keyPressed(KeyEvent e) {
+                gameController.keyDown(e);
+            }
+
+            @Override
+            public void keyReleased(KeyEvent e) {
+                gameController.keyUp(e);
+            }
+        });
         gameController.start();
     }
 
