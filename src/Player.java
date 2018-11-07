@@ -1,3 +1,5 @@
+import java.awt.*;
+
 public class Player {
 
     double x;
@@ -5,15 +7,26 @@ public class Player {
     double speed;
     double dx;
     double dy;
+    double size = 3;
     PlayerDirection direction;
+    PlayerDirection lastMovementDirection;
 
     public Player() {
         x = 0;
         y = 0;
-        speed = 1;
+        speed = .5;
         dx = 0;
         dy = 0;
         direction = PlayerDirection.down;
+        lastMovementDirection = PlayerDirection.right;
+    }
+
+    public Image getMovementImage(GameImages images){
+        if(lastMovementDirection == PlayerDirection.right){
+            return images.playerRight;
+        } else {
+            return images.playerLeft;
+        }
     }
 
     public void setDirection(PlayerDirection direction){
@@ -32,8 +45,15 @@ public class Player {
         return y;
     }
 
-    public void move(double deltaUpdate){
-        if(direction == PlayerDirection.up){
+    public double getSize(){
+        return size;
+    }
+
+    public void move(double deltaUpdate, int leftBound, int rightBound, int upperBound, int lowerBound){
+        if(direction == null){
+            dx = 0;
+            dy = 0;
+        } else if(direction == PlayerDirection.up){
             dy = -1;
             dx = 0;
         } else if(direction == PlayerDirection.down){
@@ -58,8 +78,30 @@ public class Player {
             dy = .707;
             dx = .707;
         }
-        x += dx * speed * deltaUpdate;
-        y += dy * speed * deltaUpdate;
+
+        if(dx > 0){
+            lastMovementDirection = PlayerDirection.right;
+        } else if(dx < 0){
+            lastMovementDirection = PlayerDirection.left;
+        }
+
+        double newX = x + (dx * speed * deltaUpdate);
+        double newY = y + (dy * speed * deltaUpdate);
+        if(newX < leftBound){
+            x = leftBound;
+        } else if(newX + size > rightBound){
+            x = rightBound - size;
+        } else {
+            x = newX;
+        }
+
+        if(newY < upperBound){
+            y = upperBound;
+        } else if(newY + size > lowerBound){
+            y = lowerBound - size;
+        } else {
+            y = newY;
+        }
     }
 
 }

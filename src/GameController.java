@@ -8,6 +8,7 @@ public class GameController extends JPanel {
     long lastUpdateTime;
     long frameRateResetTime;
     long updateTimeDifference;
+    long runningTime;
 
     boolean continueRunning;
     short updateCap = 7;
@@ -22,8 +23,8 @@ public class GameController extends JPanel {
 
     int arenaWidth;
     int arenaHeight;
-    int arenaDrawingHeight;
-    int arenaDrawingWidth;
+    int arenaDrawingHeightCenter;
+    int arenaDrawingWidthCenter;
     int scaledSize;
 
     public GameController(Dimension screenSize){
@@ -43,12 +44,13 @@ public class GameController extends JPanel {
         setBackground(Color.BLACK);
         setBorder(BorderFactory.createLineBorder(Color.black));
 
-        arenaWidth = 100;
-        arenaHeight = (int)Math.round((4.0 / 3) * arenaWidth);
+        arenaHeight = 100;
+        arenaWidth = 130;
 
-        arenaDrawingWidth = (int)(Math.round(screenHeight) * .7);
-        arenaDrawingHeight = (int)(Math.round((arenaHeight / arenaWidth) * screenHeight) * .7);
-        scaledSize = arenaDrawingWidth / 10;
+        double arenaHeightScale = .7;
+        arenaDrawingWidthCenter = screenWidth / 2;
+        arenaDrawingHeightCenter = screenHeight / 2;
+        scaledSize = (int)Math.round((arenaHeightScale * screenHeight) / arenaHeight);
     }
 
     public void start() {
@@ -56,6 +58,7 @@ public class GameController extends JPanel {
 
         while(continueRunning){
             updateTimeDifference = System.currentTimeMillis() - lastUpdateTime;
+            runningTime = System.currentTimeMillis() - originalStartTime;
 
             if(updateTimeDifference >= updateCap) {
                 deltaUpdate = ((updateTimeDifference) * 1.0f) / baseDeltaTime;
@@ -71,14 +74,14 @@ public class GameController extends JPanel {
     private void refresh(){
         if(gameState == GameState.game){
             setPlayerDirection();
-            player.move(deltaUpdate);
+            player.move(deltaUpdate, -arenaWidth/2, arenaWidth/2, -arenaHeight/2, arenaHeight/2);//TODO add a variable for the half sizes of these to avoid additional divide operations every update
         }
 
         repaint();
     }
 
     private void setPlayerDirection(){
-        if(wPressed && aPressed){
+        if(wPressed && aPressed){//TODO fix this up with split up down directions and then translate that into these directions below - sooo pressing a and d without s or w stops the players movement ---
             player.setDirection(PlayerDirection.upleft);
         } else if(wPressed && dPressed){
             player.setDirection(PlayerDirection.upright);
@@ -94,6 +97,8 @@ public class GameController extends JPanel {
             player.setDirection(PlayerDirection.left);
         } else if(dPressed){
             player.setDirection(PlayerDirection.right);
+        } else {
+            player.setDirection(null);
         }
     }
 
@@ -107,21 +112,31 @@ public class GameController extends JPanel {
             g2d.setColor(Color.WHITE);
             g2d.drawString("Press 'Space' to start", screenWidth/2, screenHeight/2);
         } else if(gameState == GameState.game) {
-            g.drawRect((int)Math.round(screenWidth / 2.0 - arenaDrawingWidth / 2.0), (int)Math.round(screenHeight / 2.0 - arenaDrawingHeight / 2.0), arenaDrawingWidth, arenaDrawingHeight);
+            g.drawRect(getTranslatedX(-arenaWidth/2), getTranslatedY(-arenaHeight/2), getTranslatedDrawingSize(arenaWidth), getTranslatedDrawingSize(arenaHeight));
 
             g2d.setColor(Color.WHITE);
             g2d.drawString("Update Delta: " + String.valueOf(deltaUpdate), 10, 30);
 
-            g2d.drawImage(gameImages.playerLeft, getTranslatedX(), getTranslatedY(), scaledSize, scaledSize, this);
+            g2d.drawImage(player.getMovementImage(gameImages), getTranslatedX(player.getX()), getTranslatedY(player.getY()) - getStutterOffset(1), getTranslatedDrawingSize(player.getSize()), getTranslatedDrawingSize(player.getSize()), this);
+
+            g2d.drawImage(gameImages.allImages, 0, 0, gameImages.allImages.getWidth(this)/2, gameImages.allImages.getHeight(this)/2, this);
         }
     }
 
-    private int getTranslatedX(){
-        return (int)Math.round(arenaDrawingWidth * ((player.getX() - arenaWidth/2) / arenaWidth));
+    private int getTranslatedDrawingSize(double inputedGameSize){
+        return (int)Math.round(inputedGameSize * scaledSize);
     }
 
-    private int getTranslatedY(){
-        return (int)Math.round(arenaDrawingHeight * ((player.getY() - arenaHeight/2) / arenaHeight));
+    private int getTranslatedX(double inputedGameXcoordinate){
+        return arenaDrawingWidthCenter + (int)Math.round(inputedGameXcoordinate * scaledSize);
+    }
+
+    private int getTranslatedY(double inputedGameYcoordinate){
+        return arenaDrawingHeightCenter + (int)Math.round(inputedGameYcoordinate * scaledSize);
+    }
+
+    private int getStutterOffset(int stutterAmount){
+        return ((int)Math.round((runningTime % 500) / 500.0) * scaledSize * stutterAmount);
     }
 
     boolean wPressed;
@@ -169,6 +184,7 @@ public class GameController extends JPanel {
     Player player;
     private void setupNewGame(){
         player = new Player();
+
     }
 
 }
