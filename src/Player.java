@@ -7,14 +7,14 @@ public class Player {
     double speed;
     double dx;
     double dy;
-    double size = 3;
+    double size = 6;
     PlayerDirection direction;
     PlayerDirection lastMovementDirection;
 
     public Player() {
         x = 0;
         y = 0;
-        speed = .5;
+        speed = .4;
         dx = 0;
         dy = 0;
         direction = PlayerDirection.down;

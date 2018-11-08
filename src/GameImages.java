@@ -12,6 +12,7 @@ public class GameImages {
     Image playerLeft, playerRight;
     Image allImages;
     Image[] bladeImages;
+    Image goldImage;
 
     public GameImages(String startDirectory, int screenWidth, int screenHeight, GameController gameController){
         this.startDirectory = startDirectory;
@@ -37,6 +38,8 @@ public class GameImages {
         bladeImages[1] = bufferedSprites.getSubimage(128, 128, 128, 128);
         bladeImages[2] = bufferedSprites.getSubimage(128, 256, 128, 128);
         bladeImages[3] = bufferedSprites.getSubimage(128, 384, 128, 128);
+
+        goldImage = bufferedSprites.getSubimage(384, 0, 128, 128);
     }
 
     private Image loadImage(String imageUrl){

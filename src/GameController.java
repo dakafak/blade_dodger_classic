@@ -1,6 +1,7 @@
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.KeyEvent;
+import java.security.SecureRandom;
 
 public class GameController extends JPanel {
 
@@ -75,6 +76,9 @@ public class GameController extends JPanel {
         if(gameState == GameState.game){
             setPlayerDirection();
             player.move(deltaUpdate, -arenaWidth/2, arenaWidth/2, -arenaHeight/2, arenaHeight/2);//TODO add a variable for the half sizes of these to avoid additional divide operations every update
+            for(Blade blade : blades) {
+                blade.move(deltaUpdate, -arenaWidth / 2, arenaWidth / 2, -arenaHeight / 2, arenaHeight / 2);//TODO add a variable for the half sizes of these to avoid additional divide operations every update
+            }
         }
 
         repaint();
@@ -119,6 +123,14 @@ public class GameController extends JPanel {
 
             g2d.drawImage(player.getMovementImage(gameImages), getTranslatedX(player.getX()), getTranslatedY(player.getY()) - getStutterOffset(1), getTranslatedDrawingSize(player.getSize()), getTranslatedDrawingSize(player.getSize()), this);
 
+            for(Blade blade : blades){
+                g2d.drawImage(gameImages.bladeImages[(int)Math.floor((runningTime % 400) / 100)], getTranslatedX(blade.getX()), getTranslatedY(blade.getY()), getTranslatedDrawingSize(blade.getSize()), getTranslatedDrawingSize(blade.getSize()), this);
+            }
+
+            for(Gold coin : goldCoins){
+                g2d.drawImage(gameImages.goldImage, getTranslatedX(coin.getX()), getTranslatedY(coin.getY()), getTranslatedDrawingSize(coin.getSize()), getTranslatedDrawingSize(coin.getSize()), this);
+            }
+
             g2d.drawImage(gameImages.allImages, 0, 0, gameImages.allImages.getWidth(this)/2, gameImages.allImages.getHeight(this)/2, this);
         }
     }
@@ -157,6 +169,10 @@ public class GameController extends JPanel {
         if(ke.getKeyCode() == KeyEvent.VK_D){
             dPressed = true;
         }
+
+        if(ke.getKeyCode() == KeyEvent.VK_ENTER){
+            resetGame();
+        }
     }
 
     public void keyUp(KeyEvent ke) {
@@ -181,10 +197,54 @@ public class GameController extends JPanel {
         }
     }
 
+    int characterToBladeDistanceMinimum = 20;
     Player player;
+    Blade[] blades;
+    Gold[] goldCoins;
+    int currentLevel;//TODO add new method for continuing a level that shares the same general setup like player and blades, but change how level is set or added to
     private void setupNewGame(){
-        player = new Player();
+        currentLevel = 1;
+        resetGame();
+    }
 
+    private void resetGame(){
+        player = new Player();
+        blades = new Blade[4];
+        goldCoins = new Gold[4];
+
+        for(int i = 0; i < blades.length; i++) {
+            Blade newBlade = new Blade(
+                    getRandomPositionForObjectWhileAvoidingCenter(arenaWidth, characterToBladeDistanceMinimum),
+                    getRandomPositionForObjectWhileAvoidingCenter(arenaHeight, characterToBladeDistanceMinimum),
+                    currentLevel);
+            blades[i] = newBlade;
+        }
+
+        for(int i = 0; i < goldCoins.length; i++) {
+            Gold newCoin = new Gold(
+                    getRandomPositionForObjectWhileAvoidingCenter(arenaWidth, characterToBladeDistanceMinimum),
+                    getRandomPositionForObjectWhileAvoidingCenter(arenaHeight, characterToBladeDistanceMinimum));
+            goldCoins[i] = newCoin;
+        }
+    }
+
+    private void advanceGame(){
+        currentLevel++;
+    }
+
+    private double getRandomPositionForObjectWhileAvoidingCenter(int dimensionSize, int characterToBladeDistanceMinimum){
+        double updatedCoordinate = (Math.random() * (dimensionSize*.9 + dimensionSize*.05)) - dimensionSize/2;
+
+        if(updatedCoordinate > -characterToBladeDistanceMinimum/2 &&
+                updatedCoordinate < characterToBladeDistanceMinimum/2){
+            if(Math.random() < .5){
+                updatedCoordinate -= characterToBladeDistanceMinimum;
+            } else {
+                updatedCoordinate += characterToBladeDistanceMinimum;
+            }
+        }
+
+        return updatedCoordinate;
     }
 
 }
