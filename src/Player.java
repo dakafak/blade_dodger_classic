@@ -8,17 +8,27 @@ public class Player {
     double dx;
     double dy;
     double size = 6;
+    Rectangle playerBounds;
     PlayerDirection direction;
     PlayerDirection lastMovementDirection;
 
     public Player() {
         x = 0;
         y = 0;
-        speed = .4;
+        speed = .4;//TODO Reduce player start speed
         dx = 0;
         dy = 0;
         direction = PlayerDirection.down;
         lastMovementDirection = PlayerDirection.right;
+    }
+
+    public Rectangle getPlayerBounds(){
+        if(playerBounds == null){
+            playerBounds = new Rectangle();
+        }
+
+        playerBounds.setBounds((int)x, (int)y, (int)size, (int)size);
+        return playerBounds;
     }
 
     public Image getMovementImage(GameImages images){

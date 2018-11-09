@@ -1,3 +1,5 @@
+import java.awt.*;
+
 public class Blade {
 
     double x;
@@ -6,15 +8,26 @@ public class Blade {
     double dx;
     double dy;
     double size = 10;
+    Rectangle bladeBounds;
 
-    public Blade(double x, double y, int speedModifier) {
+    public Blade(double x, double y, int level, int difficultyModifier) {
         this.x = x;
         this.y = y;
 
         dx = Math.random() * 2 - 1;
         dy = Math.random() * 2 - 1;
 
-        speed = speedModifier + (speedModifier * Math.random() / 10);
+        double speedModifier = difficultyModifier * (level / 8.0);
+        speed = speedModifier + (speedModifier * Math.random());
+    }
+
+    public Rectangle getBladeBounds(){
+        if(bladeBounds == null){
+            bladeBounds = new Rectangle();
+        }
+
+        bladeBounds.setBounds((int)x, (int)y, (int)size, (int)size);
+        return bladeBounds;
     }
 
     public double getX(){

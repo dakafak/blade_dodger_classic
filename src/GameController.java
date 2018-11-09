@@ -2,6 +2,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.KeyEvent;
 import java.security.SecureRandom;
+import java.util.ArrayList;
 
 public class GameController extends JPanel {
 
@@ -28,6 +29,12 @@ public class GameController extends JPanel {
     int arenaDrawingWidthCenter;
     int scaledSize;
 
+    int startNewGameFontSize = 8;
+    int startScreenFontSize = 12;
+    Font startNewGameFont;
+    Font startScreenFont;
+    Font gameStatFont;
+
     public GameController(Dimension screenSize){
         //TODO in loop - tell state to run it's
         super.setSize(screenSize);
@@ -46,12 +53,17 @@ public class GameController extends JPanel {
         setBorder(BorderFactory.createLineBorder(Color.black));
 
         arenaHeight = 100;
-        arenaWidth = 130;
+        arenaWidth = 150;
 
         double arenaHeightScale = .7;
         arenaDrawingWidthCenter = screenWidth / 2;
         arenaDrawingHeightCenter = screenHeight / 2;
         scaledSize = (int)Math.round((arenaHeightScale * screenHeight) / arenaHeight);
+
+        startNewGameFont = new Font(Font.MONOSPACED, Font.PLAIN, scaledSize*startNewGameFontSize);
+        gameStatFont = new Font(Font.MONOSPACED, Font.PLAIN, scaledSize*startNewGameFontSize);
+
+        startScreenFont = new Font(Font.MONOSPACED, Font.PLAIN, scaledSize*startScreenFontSize);
     }
 
     public void start() {
@@ -74,14 +86,36 @@ public class GameController extends JPanel {
 
     private void refresh(){
         if(gameState == GameState.game){
-            setPlayerDirection();
-            player.move(deltaUpdate, -arenaWidth/2, arenaWidth/2, -arenaHeight/2, arenaHeight/2);//TODO add a variable for the half sizes of these to avoid additional divide operations every update
-            for(Blade blade : blades) {
-                blade.move(deltaUpdate, -arenaWidth / 2, arenaWidth / 2, -arenaHeight / 2, arenaHeight / 2);//TODO add a variable for the half sizes of these to avoid additional divide operations every update
+            if(startDelay <= 0) {
+                setPlayerDirection();
+                player.move(deltaUpdate, -arenaWidth / 2, arenaWidth / 2, -arenaHeight / 2, arenaHeight / 2);//TODO add a variable for the half sizes of these to avoid additional divide operations every update
+
+                for (Blade blade : blades) {
+                    blade.move(deltaUpdate, -arenaWidth / 2, arenaWidth / 2, -arenaHeight / 2, arenaHeight / 2);//TODO add a variable for the half sizes of these to avoid additional divide operations every update
+                    checkBladeCollisions(blade);
+                }
+
+                checkGoldCollisions();
             }
+
+            startDelay -= updateTimeDifference;
         }
 
         repaint();
+    }
+
+    private void checkGoldCollisions(){
+        for(int i = 0; i < goldCoins.size(); i++){
+            Gold gold = goldCoins.get(i);
+            if(gold.getGoldBounds().intersects(player.getPlayerBounds())){
+                goldCoins.remove(gold);
+                money++;
+            }
+        }
+    }
+
+    private void checkBladeCollisions(Blade blade){
+
     }
 
     private void setPlayerDirection(){
@@ -113,8 +147,10 @@ public class GameController extends JPanel {
         g2d.setColor(Color.WHITE);
         g2d.drawString("Update Delta: " + String.valueOf(deltaUpdate), 10, 30);
         if(gameState == GameState.main) {
+            g2d.setFont(startScreenFont);
             g2d.setColor(Color.WHITE);
-            g2d.drawString("Press 'Space' to start", screenWidth/2, screenHeight/2);
+            String startString = "Press 'Space' to start";
+            g2d.drawString(startString, arenaDrawingWidthCenter - g2d.getFontMetrics().stringWidth(startString)/2, arenaDrawingHeightCenter);
         } else if(gameState == GameState.game) {
             g.drawRect(getTranslatedX(-arenaWidth/2), getTranslatedY(-arenaHeight/2), getTranslatedDrawingSize(arenaWidth), getTranslatedDrawingSize(arenaHeight));
 
@@ -132,6 +168,39 @@ public class GameController extends JPanel {
             }
 
             g2d.drawImage(gameImages.allImages, 0, 0, gameImages.allImages.getWidth(this)/2, gameImages.allImages.getHeight(this)/2, this);
+
+            checkForAndDrawStartInfo(g2d);
+
+            g2d.setFont(gameStatFont);
+            g2d.setColor(Color.WHITE);
+            g2d.drawString("Level: " + currentLevel, getTranslatedX(-arenaWidth/2), getTranslatedY(-arenaHeight/2) - 5);
+
+            g2d.setColor(Color.RED);
+            g2d.drawString("Lives: " + currentLevel, getTranslatedX(-arenaWidth/2 + arenaWidth/3), getTranslatedY(-arenaHeight/2) - 5);
+
+            g2d.setColor(Color.YELLOW);
+            g2d.drawString("Gold: " + money, getTranslatedX(-arenaWidth/2 + (2 * arenaWidth/3)), getTranslatedY(-arenaHeight/2) - 5);
+        }
+    }
+
+    private void checkForAndDrawStartInfo(Graphics2D g2d){
+        if(startDelay > 0){
+            String startString;
+            g2d.setFont(startNewGameFont);
+
+            if(startDelay > startDelayReadyTimeStamp){
+                g2d.setColor(Color.RED);
+                startString = "READY";
+
+            } else if(startDelay > startDelaySetTimeStamp){
+                g2d.setColor(Color.BLUE);
+                startString = "SET";
+            } else {
+                g2d.setColor(Color.GREEN);
+                startString = "DODGE";
+            }
+
+            g2d.drawString(startString, arenaDrawingWidthCenter - g2d.getFontMetrics().stringWidth(startString)/2, arenaDrawingHeightCenter);
         }
     }
 
@@ -157,21 +226,19 @@ public class GameController extends JPanel {
     boolean dPressed;
 
     public void keyDown(KeyEvent ke) {
-        if(ke.getKeyCode() == KeyEvent.VK_W){
-            wPressed = true;
-        }
-        if(ke.getKeyCode() == KeyEvent.VK_A){
-            aPressed = true;
-        }
-        if(ke.getKeyCode() == KeyEvent.VK_S){
-            sPressed = true;
-        }
-        if(ke.getKeyCode() == KeyEvent.VK_D){
-            dPressed = true;
-        }
-
-        if(ke.getKeyCode() == KeyEvent.VK_ENTER){
-            resetGame();
+        if(gameState == GameState.game) {
+            if (ke.getKeyCode() == KeyEvent.VK_W) {
+                wPressed = true;
+            }
+            if (ke.getKeyCode() == KeyEvent.VK_A) {
+                aPressed = true;
+            }
+            if (ke.getKeyCode() == KeyEvent.VK_S) {
+                sPressed = true;
+            }
+            if (ke.getKeyCode() == KeyEvent.VK_D) {
+                dPressed = true;
+            }
         }
     }
 
@@ -194,37 +261,56 @@ public class GameController extends JPanel {
             if(ke.getKeyCode() == KeyEvent.VK_D){
                 dPressed = false;
             }
+
+            if(ke.getKeyCode() == KeyEvent.VK_R){
+                resetGame();
+            }
         }
     }
 
     int characterToBladeDistanceMinimum = 20;
     Player player;
     Blade[] blades;
-    Gold[] goldCoins;
-    int currentLevel;//TODO add new method for continuing a level that shares the same general setup like player and blades, but change how level is set or added to
+    ArrayList<Gold> goldCoins;
+    int currentLevel;
+    boolean readyForNextLevel;
+    int lives;
+    int money;
+    int difficulty = 1;
+    int startDelay = 0;
+    int startDelayReadyTimeStamp;
+    int startDelaySetTimeStamp;
+
     private void setupNewGame(){
+        lives = 3;
         currentLevel = 1;
+        money = 0;
         resetGame();
     }
 
     private void resetGame(){
+        startDelay = 1000;
+        startDelayReadyTimeStamp = (startDelay / 3) * 2;
+        startDelaySetTimeStamp = startDelay / 3;
+
         player = new Player();
         blades = new Blade[4];
-        goldCoins = new Gold[4];
+        goldCoins = new ArrayList<>(4);
 
         for(int i = 0; i < blades.length; i++) {
             Blade newBlade = new Blade(
                     getRandomPositionForObjectWhileAvoidingCenter(arenaWidth, characterToBladeDistanceMinimum),
                     getRandomPositionForObjectWhileAvoidingCenter(arenaHeight, characterToBladeDistanceMinimum),
-                    currentLevel);
+                    currentLevel,
+                    difficulty);
             blades[i] = newBlade;
         }
 
-        for(int i = 0; i < goldCoins.length; i++) {
+        for(int i = 0; i < 4; i++) {
             Gold newCoin = new Gold(
                     getRandomPositionForObjectWhileAvoidingCenter(arenaWidth, characterToBladeDistanceMinimum),
                     getRandomPositionForObjectWhileAvoidingCenter(arenaHeight, characterToBladeDistanceMinimum));
-            goldCoins[i] = newCoin;
+            goldCoins.add(newCoin);
         }
     }
 
