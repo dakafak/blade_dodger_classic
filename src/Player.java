@@ -4,10 +4,14 @@ public class Player {
 
     double x;
     double y;
-    double speed;
     double dx;
     double dy;
+
+    double speed = .25;
+    float speedBonusBalance = .03f;
+
     double size = 6;
+
     Rectangle playerBounds;
     PlayerDirection direction;
     PlayerDirection lastMovementDirection;
@@ -15,7 +19,6 @@ public class Player {
     public Player() {
         x = 0;
         y = 0;
-        speed = .4;//TODO Reduce player start speed
         dx = 0;
         dy = 0;
         direction = PlayerDirection.down;
@@ -27,7 +30,7 @@ public class Player {
             playerBounds = new Rectangle();
         }
 
-        playerBounds.setBounds((int)x, (int)y, (int)size, (int)size);
+        playerBounds.setBounds((int)x, (int)y, (int)(size * .5), (int)size);//TODO add variables for width so it does not need to be calculated every time
         return playerBounds;
     }
 
@@ -59,7 +62,7 @@ public class Player {
         return size;
     }
 
-    public void move(double deltaUpdate, int leftBound, int rightBound, int upperBound, int lowerBound){
+    public void move(double deltaUpdate, int leftBound, int rightBound, int upperBound, int lowerBound, int currentSpeedBonus){
         if(direction == null){
             dx = 0;
             dy = 0;
@@ -95,8 +98,8 @@ public class Player {
             lastMovementDirection = PlayerDirection.left;
         }
 
-        double newX = x + (dx * speed * deltaUpdate);
-        double newY = y + (dy * speed * deltaUpdate);
+        double newX = x + (dx * (speed + (currentSpeedBonus * speedBonusBalance)) * deltaUpdate);
+        double newY = y + (dy * (speed + (currentSpeedBonus * speedBonusBalance)) * deltaUpdate);
         if(newX < leftBound){
             x = leftBound;
         } else if(newX + size > rightBound){

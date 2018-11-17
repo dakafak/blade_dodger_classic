@@ -17,8 +17,8 @@ public class Blade {
         dx = Math.random() * 2 - 1;
         dy = Math.random() * 2 - 1;
 
-        double speedModifier = difficultyModifier * (level / 8.0);
-        speed = speedModifier + (speedModifier * Math.random());
+        double speedModifier = difficultyModifier * ((level + Math.random()) / 16.0);
+        speed = speedModifier;
     }
 
     public Rectangle getBladeBounds(){
@@ -26,7 +26,7 @@ public class Blade {
             bladeBounds = new Rectangle();
         }
 
-        bladeBounds.setBounds((int)x, (int)y, (int)size, (int)size);
+        bladeBounds.setBounds((int)x, (int)y, (int)(size * .75), (int)(size * .75));//TODO add variables so it does not need to be calculated every time
         return bladeBounds;
     }
 

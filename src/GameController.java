@@ -86,9 +86,9 @@ public class GameController extends JPanel {
 
     private void refresh(){
         if(gameState == GameState.game){
-            if(startDelay <= 0) {
+            if(startDelay <= 0 && !canAdvance && !needToRestart && !gameOver) {
                 setPlayerDirection();
-                player.move(deltaUpdate, -arenaWidth / 2, arenaWidth / 2, -arenaHeight / 2, arenaHeight / 2);//TODO add a variable for the half sizes of these to avoid additional divide operations every update
+                player.move(deltaUpdate, -arenaWidth / 2, arenaWidth / 2, -arenaHeight / 2, arenaHeight / 2, currentSpeedBonus);//TODO add a variable for the half sizes of these to avoid additional divide operations every update
 
                 for (Blade blade : blades) {
                     blade.move(deltaUpdate, -arenaWidth / 2, arenaWidth / 2, -arenaHeight / 2, arenaHeight / 2);//TODO add a variable for the half sizes of these to avoid additional divide operations every update
@@ -112,10 +112,22 @@ public class GameController extends JPanel {
                 money++;
             }
         }
+
+        if(goldCoins.size() <= 0){
+            canAdvance = true;
+        }
     }
 
     private void checkBladeCollisions(Blade blade){
-
+        if(blade.getBladeBounds().intersects(player.getPlayerBounds())){
+            lives--;
+            money = goldAtStartOfLevel;
+            if(lives <= 0){
+                gameOver = true;
+            } else {
+                needToRestart = true;
+            }
+        }
     }
 
     private void setPlayerDirection(){
@@ -171,12 +183,40 @@ public class GameController extends JPanel {
 
             checkForAndDrawStartInfo(g2d);
 
+            if(canAdvance){
+                g2d.setFont(startNewGameFont);
+                g2d.setColor(Color.GREEN);
+                String advanceString = "Press 'R' to advance";
+                g2d.drawString(advanceString, arenaDrawingWidthCenter - g2d.getFontMetrics().stringWidth(advanceString)/2, arenaDrawingHeightCenter);
+
+                g2d.setFont(gameStatFont);
+                g2d.setColor(Color.YELLOW);
+                g2d.drawString("Speed[1] " + currentSpeedBonus, getTranslatedX(-arenaWidth/2), arenaDrawingHeightCenter - getTranslatedDrawingSize(arenaHeight/3));
+                g2d.drawString("ç" + String.valueOf(getSpeedCost()), getTranslatedX(-arenaWidth/2), arenaDrawingHeightCenter - getTranslatedDrawingSize(arenaHeight/3) + g2d.getFontMetrics().charWidth(' ') * 2);
+                g2d.setColor(Color.BLUE);
+                g2d.drawString("Boost[2] " + currentBoostBonus, getTranslatedX(-arenaWidth/2 + arenaWidth/3), arenaDrawingHeightCenter - getTranslatedDrawingSize(arenaHeight/3));
+                g2d.drawString("ç" + String.valueOf(getBoostCost()), getTranslatedX(-arenaWidth/2 + arenaWidth/3), arenaDrawingHeightCenter - getTranslatedDrawingSize(arenaHeight/3) + g2d.getFontMetrics().charWidth(' ') * 2);
+                g2d.setColor(Color.RED);
+                g2d.drawString("Lives[3]", getTranslatedX(-arenaWidth/2 + (2 * arenaWidth/3)), arenaDrawingHeightCenter - getTranslatedDrawingSize(arenaHeight/3));
+                g2d.drawString("ç" + String.valueOf(getLivesCost()), getTranslatedX(-arenaWidth/2 + (2 * arenaWidth/3)), arenaDrawingHeightCenter - getTranslatedDrawingSize(arenaHeight/3) + g2d.getFontMetrics().charWidth(' ') * 2);
+            } else if(needToRestart){
+                g2d.setFont(startNewGameFont);
+                g2d.setColor(Color.BLUE);
+                String advanceString = "Press 'R' to retry";
+                g2d.drawString(advanceString, arenaDrawingWidthCenter - g2d.getFontMetrics().stringWidth(advanceString)/2, arenaDrawingHeightCenter);
+            } else if(gameOver){
+                g2d.setFont(startNewGameFont);
+                g2d.setColor(Color.RED);
+                String advanceString = "Game Over, press 'R' to retry";
+                g2d.drawString(advanceString, arenaDrawingWidthCenter - g2d.getFontMetrics().stringWidth(advanceString)/2, arenaDrawingHeightCenter);
+            }
+
             g2d.setFont(gameStatFont);
             g2d.setColor(Color.WHITE);
             g2d.drawString("Level: " + currentLevel, getTranslatedX(-arenaWidth/2), getTranslatedY(-arenaHeight/2) - 5);
 
             g2d.setColor(Color.RED);
-            g2d.drawString("Lives: " + currentLevel, getTranslatedX(-arenaWidth/2 + arenaWidth/3), getTranslatedY(-arenaHeight/2) - 5);
+            g2d.drawString("Lives: " + lives, getTranslatedX(-arenaWidth/2 + arenaWidth/3), getTranslatedY(-arenaHeight/2) - 5);
 
             g2d.setColor(Color.YELLOW);
             g2d.drawString("Gold: " + money, getTranslatedX(-arenaWidth/2 + (2 * arenaWidth/3)), getTranslatedY(-arenaHeight/2) - 5);
@@ -262,8 +302,24 @@ public class GameController extends JPanel {
                 dPressed = false;
             }
 
+            if(canAdvance){
+                if(ke.getKeyCode() == KeyEvent.VK_1){
+                    trySpeedBonusPurchase();
+                } else if(ke.getKeyCode() == KeyEvent.VK_2){
+                    tryBoostBonusPurchase();
+                } else if(ke.getKeyCode() == KeyEvent.VK_3){
+                    tryLivesBonusPurchase();
+                }
+            }
+
             if(ke.getKeyCode() == KeyEvent.VK_R){
-                resetGame();
+                if(canAdvance){
+                    advanceGame();
+                } else if(needToRestart){
+                    resetGame();
+                } else if(gameOver){
+                    gameState = GameState.main;
+                }
             }
         }
     }
@@ -273,25 +329,74 @@ public class GameController extends JPanel {
     Blade[] blades;
     ArrayList<Gold> goldCoins;
     int currentLevel;
-    boolean readyForNextLevel;
     int lives;
     int money;
     int difficulty = 1;
     int startDelay = 0;
     int startDelayReadyTimeStamp;
     int startDelaySetTimeStamp;
+    int goldAtStartOfLevel;
+    boolean canAdvance;
+    boolean needToRestart;
+    boolean gameOver;
+
+    // upgrades
+    int currentSpeedBonus;
+    int currentBoostBonus;
 
     private void setupNewGame(){
         lives = 3;
         currentLevel = 1;
         money = 0;
+        goldAtStartOfLevel = money;
+
+        currentSpeedBonus = 0;
+        currentBoostBonus = 0;
+
         resetGame();
+    }
+
+    private int getSpeedCost(){
+        return (currentSpeedBonus + 1) * 2;
+    }
+
+    private int getBoostCost(){
+        return (currentBoostBonus + 1) * 1;
+    }
+
+    private int getLivesCost(){
+        return 8;
+    }
+
+    private void trySpeedBonusPurchase(){
+        if(money >= getSpeedCost()){
+            money -= getSpeedCost();
+            currentSpeedBonus++;
+        }
+    }
+
+    private void tryBoostBonusPurchase(){
+        if(money >= getBoostCost()){
+            money -= getBoostCost();
+            currentBoostBonus++;
+        }
+    }
+
+    private void tryLivesBonusPurchase(){
+        if(money >= getLivesCost()){
+            money -= getLivesCost();
+            lives++;
+        }
     }
 
     private void resetGame(){
         startDelay = 1000;
         startDelayReadyTimeStamp = (startDelay / 3) * 2;
         startDelaySetTimeStamp = startDelay / 3;
+        canAdvance = false;
+        needToRestart = false;
+        gameOver = false;
+        goldAtStartOfLevel = money;
 
         player = new Player();
         blades = new Blade[4];
@@ -316,6 +421,10 @@ public class GameController extends JPanel {
 
     private void advanceGame(){
         currentLevel++;
+        if(currentLevel % 5 == 0){
+            lives += 1;
+        }
+        resetGame();
     }
 
     private double getRandomPositionForObjectWhileAvoidingCenter(int dimensionSize, int characterToBladeDistanceMinimum){
