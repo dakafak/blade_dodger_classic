@@ -7,10 +7,17 @@ public class Player {
     double dx;
     double dy;
 
-    double speed = .25;
-    float speedBonusBalance = .03f;
+    double speed = .5;
+    float speedBonusBalance = .015f;
 
     double size = 6;
+
+    boolean boosting;
+    long boostingTime;
+    long boostingLength = 250L;
+    int boostStaminaCost = 60;
+
+    float stamina = 100;
 
     Rectangle playerBounds;
     PlayerDirection direction;
@@ -98,8 +105,8 @@ public class Player {
             lastMovementDirection = PlayerDirection.left;
         }
 
-        double newX = x + (dx * (speed + (currentSpeedBonus * speedBonusBalance)) * deltaUpdate);
-        double newY = y + (dy * (speed + (currentSpeedBonus * speedBonusBalance)) * deltaUpdate);
+        double newX = x + (dx * (speed * (isBoosting() ? 3 : 1) + ((1 + currentSpeedBonus) * speedBonusBalance )) * deltaUpdate);
+        double newY = y + (dy * (speed * (isBoosting() ? 3 : 1) + ((1 + currentSpeedBonus) * speedBonusBalance )) * deltaUpdate);
         if(newX < leftBound){
             x = leftBound;
         } else if(newX + size > rightBound){
@@ -117,4 +124,40 @@ public class Player {
         }
     }
 
+	public boolean isBoosting() {
+		return boosting;
+	}
+
+	private void setBoosting(boolean boosting) {
+		this.boosting = boosting;
+	}
+
+	public void tryBoostingPlayer(Long time){
+		if(!isBoosting() && stamina > boostStaminaCost){
+			setBoosting(true);
+			stamina -= boostStaminaCost;
+			boostingTime = time;
+		}
+	}
+
+	public void checkBoostResetAndStamina(Long time, double deltaUpdate, int boostingLevel){
+    	if((time - boostingTime) > boostingLength){
+    		setBoosting(false);
+		}
+
+		if(stamina < 100){
+    		stamina += deltaUpdate * .1 * (1 + boostingLevel);
+    		if(stamina > 100){
+    			stamina = 100;
+			}
+		}
+	}
+
+	public float getStamina() {
+		return stamina;
+	}
+
+	public void setStamina(float stamina) {
+		this.stamina = stamina;
+	}
 }

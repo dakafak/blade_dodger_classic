@@ -17,7 +17,7 @@ public class Blade {
         dx = Math.random() * 2 - 1;
         dy = Math.random() * 2 - 1;
 
-        double speedModifier = difficultyModifier * ((level + Math.random()) / 16.0);
+        double speedModifier = .5 + (level * .05) + (difficultyModifier * .25);
         speed = speedModifier;
     }
 

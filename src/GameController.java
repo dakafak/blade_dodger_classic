@@ -88,6 +88,7 @@ public class GameController extends JPanel {
         if(gameState == GameState.game){
             if(startDelay <= 0 && !canAdvance && !needToRestart && !gameOver) {
                 setPlayerDirection();
+                player.checkBoostResetAndStamina(runningTime, deltaUpdate, currentBoostBonus);
                 player.move(deltaUpdate, -arenaWidth / 2, arenaWidth / 2, -arenaHeight / 2, arenaHeight / 2, currentSpeedBonus);//TODO add a variable for the half sizes of these to avoid additional divide operations every update
 
                 for (Blade blade : blades) {
@@ -220,6 +221,20 @@ public class GameController extends JPanel {
 
             g2d.setColor(Color.YELLOW);
             g2d.drawString("Gold: " + money, getTranslatedX(-arenaWidth/2 + (2 * arenaWidth/3)), getTranslatedY(-arenaHeight/2) - 5);
+
+            // Stamina bar
+            if(player.getStamina() >= 90){
+            	g2d.setColor(Color.GREEN);
+			} else if(player.getStamina() >= 60){
+            	g2d.setColor(Color.YELLOW);
+			} else {
+            	g2d.setColor(Color.RED);
+			}
+
+			g2d.fillRect(getTranslatedX(-arenaWidth/2), getTranslatedY(arenaHeight/2), getTranslatedDrawingSize(arenaWidth * (player.getStamina() / 100.0)), getTranslatedDrawingSize(5));
+
+			g2d.setColor(Color.BLACK);
+			g2d.drawRect(getTranslatedX(-arenaWidth/2), getTranslatedY(arenaHeight/2), getTranslatedDrawingSize(arenaWidth), getTranslatedDrawingSize(5));
         }
     }
 
@@ -279,6 +294,9 @@ public class GameController extends JPanel {
             if (ke.getKeyCode() == KeyEvent.VK_D) {
                 dPressed = true;
             }
+            if(ke.getKeyCode() == KeyEvent.VK_SPACE){
+            	player.tryBoostingPlayer(runningTime);
+			}
         }
     }
 
